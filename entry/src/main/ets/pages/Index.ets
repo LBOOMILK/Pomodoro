@@ -1,6 +1,6 @@
 // pages/Index.ets
 import { TomatoClock } from './TomatoClock';
-import { Placeholder } from './Placeholder';
+import { TodoListPage } from './TodoListPage';
 import { Settings } from './Settings';
 @Entry
 @Component
@@ -19,9 +19,9 @@ struct Index {
 
         // 中间空页面 - 第二个Tab
         TabContent() {
-          Placeholder()
+          TodoListPage()
         }
-        .tabBar(this.buildTabBar('待定', 1))
+        .tabBar(this.buildTabBar('待办清单', 1))
 
         // 设置页面 - 第三个Tab
         TabContent() {
@@ -50,7 +50,7 @@ struct Index {
           .height(24)
         Text(text)
           .fontSize(12)
-          .fontColor('#007DFF')
+          .fontColor($r('app.color.Red'))
       } else {
         // 未选中状态
         Image($r('app.media.ic_tab_normal'))
@@ -58,7 +58,7 @@ struct Index {
           .height(24)
         Text(text)
           .fontSize(12)
-          .fontColor('#999999')
+          .fontColor($r('app.color.Green'))
       }
     }
     .justifyContent(FlexAlign.Center)

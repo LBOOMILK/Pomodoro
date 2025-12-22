@@ -3,6 +3,26 @@
     {
       "name": "start_window_background",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "SkyBlue",
+      "value": "#078FE4"
+    },
+    {
+      "name": "Gray",
+      "value": "#CCCCCC"
+    },
+    {
+      "name": "White",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "Green",
+      "value": "#4CAF50"
+    },
+    {
+      "name": "Red",
+      "value": "#FC0404"
     }
   ]
 }
