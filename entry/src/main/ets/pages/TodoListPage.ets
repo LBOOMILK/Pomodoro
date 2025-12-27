@@ -35,8 +35,7 @@ const Constants: ConstantsType = {
 
 //=================== 数据管理模块 ===================
 class TodoData {
-  private static nextId: number = 5;
-
+  private static nextId: number = 6;
   // 获取初始数据
   static getData(): TodoItemType[] {
     return [
@@ -47,7 +46,6 @@ class TodoData {
       { id: 5, content: '完成番茄钟项目', isCompleted: false }
     ];
   }
-
   // 获取下一个任务ID
   static getNextId(): number {
     return TodoData.nextId++;
@@ -155,9 +153,11 @@ export struct TodoItem {
 @Component
 struct TodoListPage {
   //=================== 状态变量 ===================
-  @State showEmptyWarning: boolean = false; // 空输入提示控制
-  @State totalTasks: TodoItemType[] = [];   // 所有待办任务
-  @State newTaskText: string = '';          // 新任务输入框内容
+  @State showEmptyWarning: boolean = false;       // 空输入提示控制
+  @State showInformation: boolean = false;        // 输入成功提示控制
+  @State showDuplicateWarning: boolean = false;   // 重复项提示控制
+  @State totalTasks: TodoItemType[] = [];         // 所有待办任务
+  @State newTaskText: string = '';                // 新任务输入框内容
 
   //=================== 生命周期 ===================
   aboutToAppear() {
@@ -167,22 +167,47 @@ struct TodoListPage {
   //=================== 业务逻辑方法 ===================
   // 添加新任务
   addTask() {
-    if (this.newTaskText.trim() === '') {
+    const taskContent = this.newTaskText.trim();
+
+    // 检查是否为空
+    if (taskContent === '') {
       this.showEmptyWarning = true;
-      // 1.5秒后自动隐藏提示
-      setTimeout(() => {
-        this.showEmptyWarning = false;
-      }, 1500);
+      this.showDuplicateWarning = false;
+      this.showInformation = false;
+      setTimeout(() => { this.showEmptyWarning = false; }, 1500);
+      this.newTaskText = '';  //立即清空输入框
       return;
     }
+
+    // 检查是否重复
+    const isDuplicate = this.totalTasks.some(task =>
+    task.content.toLowerCase() === taskContent.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      this.showEmptyWarning = false;
+      this.showDuplicateWarning = true;
+      this.showInformation = false;
+      setTimeout(() => { this.showDuplicateWarning = false; }, 1500);
+      this.newTaskText = '';  //立即清空输入框
+      return;
+    }
+
+    // 添加新任务
     const newTask: TodoItemType = {
       id: TodoData.getNextId(),
-      content: this.newTaskText.trim(),
+      content: taskContent,
       isCompleted: false
     };
 
     this.totalTasks.push(newTask);
-    this.newTaskText = '';  // 清空输入框
+    this.newTaskText = '';  //立即清空输入框
+
+    // 显示成功提示
+    this.showEmptyWarning = false;
+    this.showDuplicateWarning = false;
+    this.showInformation = true;
+    setTimeout(() => { this.showInformation = false; }, 1500);
   }
 
   // 切换完成状态
@@ -210,11 +235,29 @@ struct TodoListPage {
     Column({ space: Constants.COLUMN_SPACE }) {
       //=================== 空输入警告区域 ===================
       if (this.showEmptyWarning) {
-        Text('请输入待办事项内容')
+        Text('输入框不能为空哦~想想有什么要做的吧~(-v-)')
           .fontSize(14)
           .fontColor($r('app.color.error'))
           .margin({ top: 10 })
           .opacity(this.showEmptyWarning ? 0.9 : 0)
+          .transition({ type: TransitionType.All })
+      }
+      // 重复项警告
+      if (this.showDuplicateWarning) {
+        Text('这个待办事项已经存在啦，换一个吧~')
+          .fontSize(14)
+          .fontColor($r('app.color.warning'))  // 使用警告色（橙色）
+          .margin({ top: 10 })
+          .opacity(this.showDuplicateWarning ? 0.9 : 0)
+          .transition({ type: TransitionType.All })
+      }
+      // 添加成功提示
+      if (this.showInformation){
+        Text('待办事项已经添加好啦')
+          .fontSize(14)
+          .fontColor($r('app.color.info'))
+          .margin({ top: 10 })
+          .opacity(this.showInformation ? 0.9 : 0)
           .transition({ type: TransitionType.All })
       }
 
@@ -225,7 +268,7 @@ struct TodoListPage {
         .lineHeight(36)
         .width(Constants.TITLE_WIDTH)
         .fontColor($r('app.color.text_primary'))
-        .margin({ top: 40, bottom: 20 })
+        .margin({ top: 20, bottom: 20 })
         .textAlign(TextAlign.Start)
 
       //=================== 新增任务输入区域 ===================
@@ -283,14 +326,13 @@ struct TodoListPage {
                 //=================== 删除按钮回调 ===================
                 onDelete: () => {
                   const taskIdToDelete: number = item.id;
-
                   // 显示确认弹窗
                   prompt.showDialog({
                     title: '删除确认',
-                    message: '确定要删除该待办事项吗？',
+                    message: '确定要删除该待办事项吗？\n',
                     buttons: [
-                      { text: '取消', color: $r('app.color.text_secondary').toString() },
-                      { text: '确定', color: $r('app.color.primary_red').toString() }
+                      { text: '取消', color: '#007AFF' },
+                      { text: '确定', color: '#FF3B30' }
                     ]
                   })
                     .then((data: DialogResponse) => {
@@ -328,5 +370,4 @@ struct TodoListPage {
     .backgroundColor($r('app.color.background_secondary'))
   }
 }
-
 export { TodoListPage };
