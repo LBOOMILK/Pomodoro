@@ -6,7 +6,6 @@ interface TodoItemType {
   content: string;
   isCompleted: boolean;
 }
-
 // 常量定义类型
 interface ConstantsType {
   FULL_LENGTH: string;
@@ -142,6 +141,12 @@ export struct TodoItem {
 //=================== 待办列表页面模块 ===================
 @Component
 struct TodoListPage {
+  //=================== 新增弹窗状态 ===================
+  @State showDeleteDialog: boolean = false;
+  @State deletingId: number = -1; // 当前待删除项ID
+
+  //=================== 新增空输入状态 ===================
+  @State showEmptyWarning: boolean = false; // 空输入提示控制
   //=================== 状态变量 ===================
   @State totalTasks: TodoItemType[] = [];  // 所有待办任务
   @State newTaskText: string = '';  // 新任务输入框内容
@@ -154,8 +159,14 @@ struct TodoListPage {
   //=================== 业务逻辑方法 ===================
   // 添加新任务
   addTask() {
-    if (this.newTaskText.trim() === '') return;
-
+    if (this.newTaskText.trim() === '') {
+      this.showEmptyWarning = true;
+      // 1.5秒后自动隐藏提示
+      setTimeout(() => {
+        this.showEmptyWarning = false;
+      }, 1500);
+      return;
+    }
     const newTask: TodoItemType = {
       id: TodoData.getNextId(),
       content: this.newTaskText.trim(),
@@ -166,9 +177,11 @@ struct TodoListPage {
     this.newTaskText = '';  // 清空输入框
   }
 
-  // 删除任务
-  deleteTask(id: number) {
-    this.totalTasks = this.totalTasks.filter(item => item.id !== id);
+  //=================== 修改后的删除方法 ===================
+  deleteTask() {
+    if (this.deletingId === -1) return;
+    this.totalTasks = [...this.totalTasks.filter(item => item.id !== this.deletingId)]; // 使用扩展运算符触发刷新
+    this.deletingId = -1;
   }
 
   // 切换完成状态
@@ -198,6 +211,14 @@ struct TodoListPage {
   //=================== 页面构建 ===================
   build() {
     Column({ space: Constants.COLUMN_SPACE }) {
+      if (this.showEmptyWarning) {
+        Text('请输入待办事项内容')
+          .fontSize(14)
+          .fontColor($r('app.color.Red'))
+          .margin({ top: 10 })
+          .opacity(this.showEmptyWarning ? 0.9 : 0) // 绑定动态opacity
+          .transition({ type: TransitionType.All })
+      }
       //=================== 页面标题区域 ===================
       Text('   我的待办清单')
         .fontSize(24)
@@ -214,7 +235,7 @@ struct TodoListPage {
           text: this.newTaskText
         })
           .onChange((value: string) => {
-            this.newTaskText = value;  // 更新输入框内容
+            this.newTaskText = value; // 更新输入框内容
           })
           .width('70%')
           .height(40)
@@ -229,7 +250,7 @@ struct TodoListPage {
           .fontColor(Color.White)
           .borderRadius(20)
           .onClick(() => {
-            this.addTask();  // 触发添加任务
+            this.addTask(); // 触发添加任务
           })
       }
       .padding({ left: 20, right: 20, bottom: 20 })
@@ -251,15 +272,14 @@ struct TodoListPage {
         } else {
           Column({ space: 12 }) {
             ForEach(this.totalTasks, (item: TodoItemType) => {
-              // 渲染每个待办事项并绑定事件
               TodoItem({
                 todoItem: item,
-                // 直接通过属性传递回调（替代链式调用）
                 onDelete: () => {
-                  this.deleteTask(item.id);
+                  this.deletingId = item.id; // 设置待删除ID
+                  this.showDeleteDialog = true; // 显示弹窗
                 },
                 onToggle: () => {
-                  console.info('【Debug】Toggle callback called for item:', item.id);  //复选框回调日志
+                  console.info('【Debug】Toggle callback called for item:', item.id); //复选框回调日志
                   this.toggleTaskStatus(item.id);
                 },
                 onTextChange: (content: string) => {
@@ -273,7 +293,8 @@ struct TodoListPage {
         }
       }
       .width('100%')
-      .margin({ top: -10 })  // 负边距调整布局
+      .layoutWeight(1) // Scroll组件占据父容器剩余的全部空间，防止无法看完所有列表
+      .edgeEffect(EdgeEffect.Spring) //弹性滚动
     }
     //=================== 页面整体样式 ===================
     .width('100%')
