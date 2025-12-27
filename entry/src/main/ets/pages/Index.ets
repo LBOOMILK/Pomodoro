@@ -2,6 +2,7 @@
 import { TomatoClock } from './TomatoClock';
 import { TodoListPage } from './TodoListPage';
 import { Settings } from './Settings';
+
 @Entry
 @Component
 struct Index {
@@ -9,21 +10,21 @@ struct Index {
 
   build() {
     Column() {
-      // Tabs作为导航容器
+      //=================== Tabs导航容器 ===================
       Tabs({ barPosition: BarPosition.End }) {
-        // 番茄钟页面 - 第一个Tab
+        //=================== 番茄钟页面 - 第一个Tab ===================
         TabContent() {
           TomatoClock()
         }
         .tabBar(this.buildTabBar('番茄钟', 0))
 
-        // 中间空页面 - 第二个Tab
+        //=================== 待办清单页面 - 第二个Tab ===================
         TabContent() {
           TodoListPage()
         }
         .tabBar(this.buildTabBar('待办清单', 1))
 
-        // 设置页面 - 第三个Tab
+        //=================== 设置页面 - 第三个Tab ===================
         TabContent() {
           Settings()
         }
@@ -31,35 +32,34 @@ struct Index {
       }
       .barWidth('100%')
       .barHeight(60)
+      .backgroundColor($r('app.color.background_primary'))
       .onChange((index: number) => {
         this.currentIndex = index;
       })
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor($r('app.color.background_secondary'))
   }
 
-  // 构建Tab栏的单个项目
+  //=================== 构建Tab栏的单个项目 ===================
   @Builder buildTabBar(text: string, index: number) {
     Column() {
-      if (this.currentIndex === index) {
-        // 选中状态
-        Image($r('app.media.ic_tab_selected'))
-          .width(24)
-          .height(24)
-        Text(text)
-          .fontSize(12)
-          .fontColor($r('app.color.Red'))
-      } else {
-        // 未选中状态
-        Image($r('app.media.ic_tab_normal'))
-          .width(24)
-          .height(24)
-        Text(text)
-          .fontSize(12)
-          .fontColor($r('app.color.Green'))
-      }
+      // 图标区域
+      Image(this.currentIndex === index ?
+        $r('app.media.ic_tab_selected') :
+        $r('app.media.ic_tab_normal'))
+        .width(24)
+        .height(24)
+        .margin({ bottom: 4 })
+
+      // 文字区域
+      Text(text)
+        .fontSize(12)
+        .fontColor(this.currentIndex === index ?
+          $r('app.color.primary_red') :   // 选中状态用蓝色
+          $r('app.color.primary_green') // 未选中状态用灰色
+        )
     }
     .justifyContent(FlexAlign.Center)
     .width('100%')

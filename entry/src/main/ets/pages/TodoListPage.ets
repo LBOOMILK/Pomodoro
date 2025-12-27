@@ -1,17 +1,25 @@
 // TodoPage.ets
+//=================== 导入模块 ===================
+import prompt from '@ohos.prompt';
+
 //=================== 类型定义模块 ===================
-//待办事项数据类型定义
+// 弹窗响应类型
+interface DialogResponse {
+  index: number;  // 按钮索引：0表示第一个按钮，1表示第二个按钮
+}
+
+// 待办事项数据类型定义
 interface TodoItemType {
   id: number;
   content: string;
   isCompleted: boolean;
 }
+
 // 常量定义类型
 interface ConstantsType {
   FULL_LENGTH: string;
   TITLE_WIDTH: string;
   COLUMN_SPACE: number;
-  PAGE_BACKGROUND: string;
   LIST_ITEM_HEIGHT: number;
   LIST_BORDER_RADIUS: number;
 }
@@ -21,7 +29,6 @@ const Constants: ConstantsType = {
   FULL_LENGTH: '100%',
   TITLE_WIDTH: '100%',
   COLUMN_SPACE: 16,  // 列间距
-  PAGE_BACKGROUND: '#F5F5F5',  // 页面背景色
   LIST_ITEM_HEIGHT: 72,  // 列表项高度
   LIST_BORDER_RADIUS: 24  // 列表项圆角半径
 };
@@ -33,10 +40,11 @@ class TodoData {
   // 获取初始数据
   static getData(): TodoItemType[] {
     return [
-      { id: 1, content: '学习ArkTS基础', isCompleted: false },
-      { id: 2, content: '完成Todo页面', isCompleted: false },
-      { id: 3, content: '吃个饭', isCompleted: false },
-      { id: 4, content: '番茄钟项目', isCompleted: false }
+      { id: 1, content: '此为列表示例', isCompleted: false },
+      { id: 2, content: '学习ArkTS基础', isCompleted: false },
+      { id: 3, content: '吃个饭', isCompleted: true },
+      { id: 4, content: '喝个水', isCompleted: true },
+      { id: 5, content: '完成番茄钟项目', isCompleted: false }
     ];
   }
 
@@ -53,17 +61,18 @@ export struct TodoItem {
   @Prop todoItem: TodoItemType;  // 待办事项数据
   @State localIsCompleted: boolean = false;  // 添加本地状态
 
-  //通过属性接收回调函数（替代手动存储的handler）
+  // 通过属性接收回调函数（替代手动存储的handler）
   onDelete: () => void = () => {};
   onToggle: () => void = () => {};
   onTextChange: (content: string) => void = () => {};
 
-  // 生命周期：初始化本地状态
+  //=================== 生命周期 ===================
+  // 初始化本地状态
   aboutToAppear() {
     this.localIsCompleted = this.todoItem.isCompleted;
   }
 
-  // 生命周期：更新时同步
+  // 更新时同步
   aboutToUpdate() {
     this.localIsCompleted = this.todoItem.isCompleted;
   }
@@ -77,9 +86,8 @@ export struct TodoItem {
           Circle()
             .width(20)
             .height(20)
-            // 使用本地状态
-            .fill(this.localIsCompleted ? $r('app.color.SkyBlue') : $r('app.color.White'))
-            .stroke(this.localIsCompleted ? $r('app.color.SkyBlue') : $r('app.color.Gray'))
+            .fill(this.localIsCompleted ? $r('app.color.checkbox_selected') : $r('app.color.checkbox_unselected'))
+            .stroke(this.localIsCompleted ? $r('app.color.checkbox_selected') : $r('app.color.checkbox_unselected'))
             .strokeWidth(1.5)
           // 完成状态显示对勾
           if (this.localIsCompleted) {
@@ -93,7 +101,6 @@ export struct TodoItem {
         .height(24)
       }
       .onClick(() => {
-        // console.info('【Debug】Checkbox clicked, item id:', this.todoItem.id); // 复选框按钮日志
         this.localIsCompleted = !this.localIsCompleted;  // 更新本地状态
         this.onToggle?.(); // 调用父组件回调
       })
@@ -103,7 +110,7 @@ export struct TodoItem {
         .width('65%')
         .height(32)
         .fontSize(16)
-        .fontColor('#333333')
+        .fontColor($r('app.color.text_primary'))
         // 使用本地状态
         .opacity(this.localIsCompleted ? 0.4 : 1)
         .decoration({
@@ -118,9 +125,8 @@ export struct TodoItem {
         .borderRadius(16)
         .margin({ left: 8 })
         .fontColor($r('app.color.White'))
-        .backgroundColor($r('app.color.Red'))
+        .backgroundColor($r('app.color.primary_red'))
         .onClick(() => {
-          // console.info('【Debug】Delete button clicked'); // 删除按钮日志
           this.onDelete?.(); // 直接调用属性传递的回调
         })
     }
@@ -128,28 +134,30 @@ export struct TodoItem {
     .width('96%')
     .height(Constants.LIST_ITEM_HEIGHT)
     .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-    .backgroundColor(Color.White)
+    .backgroundColor($r('app.color.card_background'))
     .borderRadius(Constants.LIST_BORDER_RADIUS)
     .margin({
       left: '3%',
       right: '3%',
       bottom: 12
     })
+    .shadow({
+      radius: 8,
+      color: $r('app.color.shadow'),
+      offsetX: 0,
+      offsetY: 2
+    })
+    .focusable(false)  // 禁用整个列表项的焦点
   }
 }
 
 //=================== 待办列表页面模块 ===================
 @Component
 struct TodoListPage {
-  //=================== 新增弹窗状态 ===================
-  @State showDeleteDialog: boolean = false;
-  @State deletingId: number = -1; // 当前待删除项ID
-
-  //=================== 新增空输入状态 ===================
-  @State showEmptyWarning: boolean = false; // 空输入提示控制
   //=================== 状态变量 ===================
-  @State totalTasks: TodoItemType[] = [];  // 所有待办任务
-  @State newTaskText: string = '';  // 新任务输入框内容
+  @State showEmptyWarning: boolean = false; // 空输入提示控制
+  @State totalTasks: TodoItemType[] = [];   // 所有待办任务
+  @State newTaskText: string = '';          // 新任务输入框内容
 
   //=================== 生命周期 ===================
   aboutToAppear() {
@@ -177,21 +185,10 @@ struct TodoListPage {
     this.newTaskText = '';  // 清空输入框
   }
 
-  //=================== 修改后的删除方法 ===================
-  deleteTask() {
-    if (this.deletingId === -1) return;
-    this.totalTasks = [...this.totalTasks.filter(item => item.id !== this.deletingId)]; // 使用扩展运算符触发刷新
-    this.deletingId = -1;
-  }
-
   // 切换完成状态
   toggleTaskStatus(id: number) {
-    // console.info('【Debug】toggleTaskStatus called for id:', id); // 切换查询日志
-
-    // 方法1：使用数组map（当前方式）
     this.totalTasks = this.totalTasks.map((item: TodoItemType): TodoItemType => {
       if (item.id === id) {
-        // console.info('【Debug】Found item, toggling from', item.isCompleted, 'to', !item.isCompleted); //状态切换日志
         return { id: item.id, content: item.content, isCompleted: !item.isCompleted };
       }
       return item;
@@ -211,20 +208,23 @@ struct TodoListPage {
   //=================== 页面构建 ===================
   build() {
     Column({ space: Constants.COLUMN_SPACE }) {
+      //=================== 空输入警告区域 ===================
       if (this.showEmptyWarning) {
         Text('请输入待办事项内容')
           .fontSize(14)
-          .fontColor($r('app.color.Red'))
+          .fontColor($r('app.color.error'))
           .margin({ top: 10 })
-          .opacity(this.showEmptyWarning ? 0.9 : 0) // 绑定动态opacity
+          .opacity(this.showEmptyWarning ? 0.9 : 0)
           .transition({ type: TransitionType.All })
       }
+
       //=================== 页面标题区域 ===================
       Text('   我的待办清单')
         .fontSize(24)
         .fontWeight(FontWeight.Bold)
         .lineHeight(36)
         .width(Constants.TITLE_WIDTH)
+        .fontColor($r('app.color.text_primary'))
         .margin({ top: 40, bottom: 20 })
         .textAlign(TextAlign.Start)
 
@@ -235,22 +235,28 @@ struct TodoListPage {
           text: this.newTaskText
         })
           .onChange((value: string) => {
-            this.newTaskText = value; // 更新输入框内容
+            this.newTaskText = value;  // 更新输入框内容
           })
           .width('70%')
           .height(40)
           .borderRadius(20)
-          .backgroundColor(Color.White)
+          .backgroundColor($r('app.color.card_background'))
+          .border({
+            width: 1,
+            color: $r('app.color.separator')
+          })
+          .placeholderColor($r('app.color.text_tertiary'))
+          .fontColor($r('app.color.text_primary'))
           .padding({ left: 16, right: 16 })
 
         Button('添加')
           .width('30%')
           .height(40)
-          .backgroundColor($r('app.color.Blue'))
-          .fontColor(Color.White)
+          .backgroundColor($r('app.color.primary_blue'))
+          .fontColor($r('app.color.White'))
           .borderRadius(20)
           .onClick(() => {
-            this.addTask(); // 触发添加任务
+            this.addTask();  // 触发添加任务
           })
       }
       .padding({ left: 20, right: 20, bottom: 20 })
@@ -262,7 +268,7 @@ struct TodoListPage {
           Column() {
             Text('暂无待办事项，点击"添加"创建第一个任务吧～')
               .fontSize(14)
-              .fontColor('#999999')
+              .fontColor($r('app.color.text_tertiary'))
               .margin({ top: 40 })
               .width('100%')
               .textAlign(TextAlign.Center)
@@ -274,14 +280,34 @@ struct TodoListPage {
             ForEach(this.totalTasks, (item: TodoItemType) => {
               TodoItem({
                 todoItem: item,
+                //=================== 删除按钮回调 ===================
                 onDelete: () => {
-                  this.deletingId = item.id; // 设置待删除ID
-                  this.showDeleteDialog = true; // 显示弹窗
+                  const taskIdToDelete: number = item.id;
+
+                  // 显示确认弹窗
+                  prompt.showDialog({
+                    title: '删除确认',
+                    message: '确定要删除该待办事项吗？',
+                    buttons: [
+                      { text: '取消', color: $r('app.color.text_secondary').toString() },
+                      { text: '确定', color: $r('app.color.primary_red').toString() }
+                    ]
+                  })
+                    .then((data: DialogResponse) => {
+                      if (data.index === 1) {  // 确定按钮
+                        // 直接删除
+                        this.totalTasks = this.totalTasks.filter(task => task.id !== taskIdToDelete);
+                      }
+                    })
+                    .catch((error: Error) => {
+                      console.error('弹窗显示失败:', error);
+                    });
                 },
+                //=================== 切换完成状态回调 ===================
                 onToggle: () => {
-                  console.info('【Debug】Toggle callback called for item:', item.id); //复选框回调日志
                   this.toggleTaskStatus(item.id);
                 },
+                //=================== 更新文本回调 ===================
                 onTextChange: (content: string) => {
                   this.updateTaskText(item.id, content);
                 }
@@ -293,13 +319,13 @@ struct TodoListPage {
         }
       }
       .width('100%')
-      .layoutWeight(1) // Scroll组件占据父容器剩余的全部空间，防止无法看完所有列表
-      .edgeEffect(EdgeEffect.Spring) //弹性滚动
+      .layoutWeight(1)      // 占据剩余空间
+      .edgeEffect(EdgeEffect.Spring)  // 弹性滚动
     }
     //=================== 页面整体样式 ===================
     .width('100%')
     .height('100%')
-    .backgroundColor(Constants.PAGE_BACKGROUND)
+    .backgroundColor($r('app.color.background_secondary'))
   }
 }
 

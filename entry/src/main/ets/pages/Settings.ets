@@ -1,7 +1,7 @@
 // pages/Settings.ets
 @Component
 export struct Settings {
-  @StorageLink('themeColor') themeColor: string = '#007DFF';
+  @StorageLink('themeColor') themeColor: string = '随手机设置 浅色/深色模式 转换';
   @StorageLink('fontSize') fontSize: number = 16;
 
   build() {
@@ -21,14 +21,10 @@ export struct Settings {
             Blank()
             Text(this.themeColor)
               .fontSize(this.fontSize)
-              .fontColor('#999999')
+              .fontColor($r('app.color.text_tertiary'))
           }
           .padding(15)
         }
-        .onClick(() => {
-          // 这里可以弹出颜色选择器
-        })
-
         // 字体大小设置
         ListItem() {
           Row() {
@@ -37,7 +33,7 @@ export struct Settings {
             Blank()
             Text(`标准 (${this.fontSize}px)`)
               .fontSize(this.fontSize)
-              .fontColor('#999999')
+              .fontColor($r('app.color.text_tertiary'))
           }
           .padding(15)
         }
