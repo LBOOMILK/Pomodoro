@@ -1,6 +1,8 @@
 // pages/TomatoClock.ets
+import { FontUtils } from '../until/FontUtils';
 @Component
 export struct TomatoClock {
+  @StorageLink('globalFontSize') fontSize: number = 16;
   @State timeRemaining: number = 3 ; // 25分钟，单位秒//25 * 60//测试时先用3s
   @State isRunning: boolean = false;
   @State timer: number = 0;
@@ -9,7 +11,7 @@ export struct TomatoClock {
     Column() {
       //=================== 页面标题 ===================
       Text('番茄时钟')
-        .fontSize(24)
+        .fontSize(FontUtils.getTitleSize(this.fontSize))  // 使用标题字体
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ top: 30, bottom: 50 })
@@ -34,6 +36,7 @@ export struct TomatoClock {
         Button(this.isRunning ? '暂停' : '开始')
           .backgroundColor($r('app.color.primary_blue'))
           .fontColor($r('app.color.text_primary'))
+          .fontSize(FontUtils.getSmallSize(this.fontSize))  // 按钮用小号
           .width(120)
           .height(45)
           .borderRadius(20)
@@ -45,6 +48,7 @@ export struct TomatoClock {
         Button('重置')
           .backgroundColor($r('app.color.button_disabled'))
           .fontColor($r('app.color.text_secondary'))
+          .fontSize(FontUtils.getSmallSize(this.fontSize))  // 按钮用小号
           .width(120)
           .height(45)
           .borderRadius(20)

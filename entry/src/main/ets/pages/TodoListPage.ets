@@ -1,7 +1,7 @@
 // TodoPage.ets
 //=================== 导入模块 ===================
 import prompt from '@ohos.prompt';
-
+import { FontUtils } from '../until/FontUtils';
 //=================== 类型定义模块 ===================
 // 弹窗响应类型
 interface DialogResponse {
@@ -58,7 +58,9 @@ export struct TodoItem {
   // 改回 @Prop，使用本地状态管理
   @Prop todoItem: TodoItemType;  // 待办事项数据
   @State localIsCompleted: boolean = false;  // 添加本地状态
-
+  // 导入字体工具
+  // 注意：组件内不能直接使用StorageLink，需要通过父组件传递
+  @Prop fontSize: number = 16;  // 从父组件传递过来
   // 通过属性接收回调函数（替代手动存储的handler）
   onDelete: () => void = () => {};
   onToggle: () => void = () => {};
@@ -90,7 +92,7 @@ export struct TodoItem {
           // 完成状态显示对勾
           if (this.localIsCompleted) {
             Text('✓')
-              .fontSize(12)
+              .fontSize(12)  // 对勾固定大小
               .fontColor(Color.White)
               .fontWeight(FontWeight.Bold)
           }
@@ -107,7 +109,7 @@ export struct TodoItem {
       Text(this.todoItem.content)
         .width('65%')
         .height(32)
-        .fontSize(16)
+        .fontSize(FontUtils.getBodySize(this.fontSize))  // 使用正文字体
         .fontColor($r('app.color.text_primary'))
         // 使用本地状态
         .opacity(this.localIsCompleted ? 0.4 : 1)
@@ -117,7 +119,7 @@ export struct TodoItem {
 
       //=================== 右侧删除按钮区域 ===================
       Text('删除')
-        .fontSize(14)
+        .fontSize(FontUtils.getSmallSize(this.fontSize))  // 使用小号字体
         .fontWeight(FontWeight.Medium)
         .padding({ left: 12, right: 12, top: 6, bottom: 6 })
         .borderRadius(16)
@@ -153,11 +155,12 @@ export struct TodoItem {
 @Component
 struct TodoListPage {
   //=================== 状态变量 ===================
-  @State showEmptyWarning: boolean = false;       // 空输入提示控制
-  @State showInformation: boolean = false;        // 输入成功提示控制
-  @State showDuplicateWarning: boolean = false;   // 重复项提示控制
-  @State totalTasks: TodoItemType[] = [];         // 所有待办任务
-  @State newTaskText: string = '';                // 新任务输入框内容
+  @StorageLink('globalFontSize') fontSize: number = 16;     //动态字体大小
+  @State showEmptyWarning: boolean = false;                 // 空输入提示控制
+  @State showInformation: boolean = false;                  // 输入成功提示控制
+  @State showDuplicateWarning: boolean = false;             // 重复项提示控制
+  @State totalTasks: TodoItemType[] = [];                   // 所有待办任务
+  @State newTaskText: string = '';                          // 新任务输入框内容
 
   //=================== 生命周期 ===================
   aboutToAppear() {
@@ -236,7 +239,7 @@ struct TodoListPage {
       //=================== 空输入警告区域 ===================
       if (this.showEmptyWarning) {
         Text('输入框不能为空哦~想想有什么要做的吧~(-v-)')
-          .fontSize(14)
+          .fontSize(FontUtils.getSmallSize(this.fontSize))  // 使用小号字体
           .fontColor($r('app.color.error'))
           .margin({ top: 10 })
           .opacity(this.showEmptyWarning ? 0.9 : 0)
@@ -245,7 +248,7 @@ struct TodoListPage {
       // 重复项警告
       if (this.showDuplicateWarning) {
         Text('这个待办事项已经存在啦，换一个吧~')
-          .fontSize(14)
+          .fontSize(FontUtils.getSmallSize(this.fontSize))  // 使用小号字体
           .fontColor($r('app.color.warning'))  // 使用警告色（橙色）
           .margin({ top: 10 })
           .opacity(this.showDuplicateWarning ? 0.9 : 0)
@@ -254,7 +257,7 @@ struct TodoListPage {
       // 添加成功提示
       if (this.showInformation){
         Text('待办事项已经添加好啦')
-          .fontSize(14)
+          .fontSize(FontUtils.getSmallSize(this.fontSize))  // 使用小号字体
           .fontColor($r('app.color.info'))
           .margin({ top: 10 })
           .opacity(this.showInformation ? 0.9 : 0)
@@ -263,7 +266,7 @@ struct TodoListPage {
 
       //=================== 页面标题区域 ===================
       Text('   我的待办清单')
-        .fontSize(24)
+        .fontSize(FontUtils.getTitleSize(this.fontSize))  // 使用标题字体
         .fontWeight(FontWeight.Bold)
         .lineHeight(36)
         .width(Constants.TITLE_WIDTH)
@@ -290,6 +293,7 @@ struct TodoListPage {
           })
           .placeholderColor($r('app.color.text_tertiary'))
           .fontColor($r('app.color.text_primary'))
+          .fontSize(FontUtils.getBodySize(this.fontSize))  // 输入框文字用正文大小
           .padding({ left: 16, right: 16 })
 
         Button('添加')
@@ -297,6 +301,7 @@ struct TodoListPage {
           .height(40)
           .backgroundColor($r('app.color.primary_blue'))
           .fontColor($r('app.color.White'))
+          .fontSize(FontUtils.getSmallSize(this.fontSize))  // 按钮文字用小号
           .borderRadius(20)
           .onClick(() => {
             this.addTask();  // 触发添加任务
@@ -323,6 +328,7 @@ struct TodoListPage {
             ForEach(this.totalTasks, (item: TodoItemType) => {
               TodoItem({
                 todoItem: item,
+                fontSize: this.fontSize,  // 传递字体大小给子组件
                 //=================== 删除按钮回调 ===================
                 onDelete: () => {
                   const taskIdToDelete: number = item.id;
