@@ -54,7 +54,7 @@
     },
     {
       "name": "card_background",
-      "value": "#1C1C1E"
+      "value": "#25262B"
     },
     {
       "name": "button_disabled",
@@ -86,11 +86,11 @@
     },
     {
       "name": "shadow",
-      "value": "#FFFFFF10"
+      "value": "#000000"
     },
     {
       "name": "overlay",
-      "value": "#000000B3"
+      "value": "#303037"
     },
     {
       "name": "White",

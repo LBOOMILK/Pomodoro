@@ -86,11 +86,11 @@
     },
     {
       "name": "shadow",
-      "value": "#00000029"
+      "value": "#f5f5f7"
     },
     {
       "name": "overlay",
-      "value": "#00000080"
+      "value": "#303037"
     },
     {
       "name": "White",
