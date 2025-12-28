@@ -2,11 +2,13 @@
 import { TomatoClock } from './TomatoClock';
 import { TodoListPage } from './TodoListPage';
 import { Settings } from './Settings';
+import { FontUtils } from '../until/FontUtils';
 
 @Entry
 @Component
 struct Index {
   @State currentIndex: number = 0;
+  @StorageLink('globalFontSize') fontSize: number = 16;
 
   build() {
     Column() {
@@ -55,7 +57,7 @@ struct Index {
 
       // 文字区域
       Text(text)
-        .fontSize(12)
+        .fontSize(FontUtils.getSmallSize(this.fontSize))
         .fontColor(this.currentIndex === index ?
           $r('app.color.primary_red') :   // 选中状态用蓝色
           $r('app.color.primary_green') // 未选中状态用灰色
