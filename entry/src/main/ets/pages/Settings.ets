@@ -1,4 +1,7 @@
-// pages/Settings.ets
+//Settings.ets
+//=================== 导入模块 ===================
+import { FontUtils } from '../until/FontUtils';
+
 @Component
 export struct Settings {
   @StorageLink('globalFontSize') fontSize: number = 16;
@@ -19,13 +22,15 @@ export struct Settings {
             .margin({ bottom: 12 })
 
           Text('未登录用户')
-            .fontSize(this.fontSize + 4)  // 使用动态字体大小，+4表示比正文大
+          // 使用FontUtils：大标题（比正文大4）
+            .fontSize(FontUtils.getLargeSize(this.fontSize))
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
             .margin({ bottom: 4 })
 
           Text('点击登录以同步数据')
-            .fontSize(this.fontSize - 2)  // 使用动态字体大小，-2表示比正文小
+          // 使用FontUtils：小号字体（比正文小2）
+            .fontSize(FontUtils.getSmallSize(this.fontSize))
             .fontColor($r('app.color.text_tertiary'))
         }
         .width('100%')
@@ -40,7 +45,8 @@ export struct Settings {
         Column() {
           Row() {
             Text('主题设置')
-              .fontSize(this.fontSize + 2)  // 标题比正文字体大2
+            // 使用FontUtils：标题（比正文大2）
+              .fontSize(FontUtils.getTitleSize(this.fontSize))
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
               .flexGrow(1)
@@ -49,7 +55,8 @@ export struct Settings {
 
           // 主题说明
           Text('跟随系统主题自动切换')
-            .fontSize(this.fontSize)  // 使用当前字体大小
+          // 使用FontUtils：正文字体
+            .fontSize(FontUtils.getBodySize(this.fontSize))
             .fontColor($r('app.color.text_tertiary'))
             .padding({ left: 16, right: 16, bottom: 16 })
         }
@@ -62,20 +69,23 @@ export struct Settings {
         Column() {
           Row() {
             Text('字体大小')
-              .fontSize(this.fontSize + 2)  // 标题比正文字体大2
+            // 使用FontUtils：标题（比正文大2）
+              .fontSize(FontUtils.getTitleSize(this.fontSize))
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
               .flexGrow(1)
           }
           .padding({ top: 16, left: 16, right: 16, bottom: 12 })
 
-          // 当前字体大小显示 - 使用当前字体大小显示自身
+          // 当前字体大小显示
           Row() {
             Text('当前：')
-              .fontSize(this.fontSize)  // 使用当前字体大小
+            // 使用FontUtils：正文字体
+              .fontSize(FontUtils.getBodySize(this.fontSize))
               .fontColor($r('app.color.text_secondary'))
             Text(`${this.fontSize}px (${this.getFontSizeName(this.fontSize)})`)
-              .fontSize(this.fontSize)  // 使用当前字体大小
+            // 使用FontUtils：正文字体
+              .fontSize(FontUtils.getBodySize(this.fontSize))
               .fontColor($r('app.color.text_primary'))
               .fontWeight(FontWeight.Medium)
           }
@@ -85,15 +95,17 @@ export struct Settings {
           Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.SpaceBetween }) {
             ForEach(this.fontSizes, (size: number, index: number) => {
               Column() {
-                // 按钮上的字体大小数字 - 动态调整
+                // 按钮上的字体大小数字
                 Text(`${size}px`)
-                  .fontSize(size === 12 ? 10 : Math.max(10, size - 4))
+                // 使用FontUtils：按钮数字专用方法
+                  .fontSize(FontUtils.getButtonNumberSize(size))
                   .fontColor(size === this.fontSize ?
                     $r('app.color.White') :
                     $r('app.color.text_primary'))
                 // 按钮上的描述文字
                 Text(this.fontSizeNames[index])
-                  .fontSize(12)  // 描述文字保持固定大小
+                // 使用FontUtils：固定小字体（不受全局字体影响）
+                  .fontSize(FontUtils.getFixedSmallSize())
                   .fontColor(size === this.fontSize ?
                     $r('app.color.White') :
                     $r('app.color.text_tertiary'))
@@ -125,7 +137,8 @@ export struct Settings {
         Column() {
           Row() {
             Text('应用信息')
-              .fontSize(this.fontSize + 2)  // 标题比正文字体大2
+            // 使用FontUtils：标题（比正文大2）
+              .fontSize(FontUtils.getTitleSize(this.fontSize))
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
               .flexGrow(1)
@@ -145,7 +158,8 @@ export struct Settings {
         Column() {
           Row() {
             Text('关于我们')
-              .fontSize(this.fontSize + 2)  // 标题比正文字体大2
+            // 使用FontUtils：标题（比正文大2）
+              .fontSize(FontUtils.getTitleSize(this.fontSize))
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
               .flexGrow(1)
@@ -160,9 +174,10 @@ export struct Settings {
         .backgroundColor($r('app.color.card_background'))
         .borderRadius(16)
 
-        // 版本信息 - 使用比正文字体小2
+        // 版本信息
         Text('番茄钟 v1.0.0')
-          .fontSize(this.fontSize - 2)
+        // 使用FontUtils：超小字体（比正文小4）
+          .fontSize(FontUtils.getTinySize(this.fontSize))
           .fontColor($r('app.color.text_tertiary'))
           .margin({ top: 24, bottom: 40 })
           .width('100%')
@@ -176,7 +191,11 @@ export struct Settings {
     .backgroundColor($r('app.color.background_secondary'))
   }
 
-  // 获取字体大小对应的名称
+  //=================== 私有方法 ===================
+
+  /**
+   * 获取字体大小对应的名称
+   */
   private getFontSizeName(size: number): string {
     const index = this.fontSizes.indexOf(size);
     return index >= 0 ? this.fontSizeNames[index] : '自定义';
