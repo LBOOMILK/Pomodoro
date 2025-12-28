@@ -22,14 +22,12 @@ export struct Settings {
             .margin({ bottom: 12 })
 
           Text('未登录用户')
-          // 使用FontUtils：大标题（比正文大4）
             .fontSize(FontUtils.getLargeSize(this.fontSize))
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
             .margin({ bottom: 4 })
 
           Text('点击登录以同步数据')
-          // 使用FontUtils：小号字体（比正文小2）
             .fontSize(FontUtils.getSmallSize(this.fontSize))
             .fontColor($r('app.color.text_tertiary'))
         }
@@ -45,7 +43,6 @@ export struct Settings {
         Column() {
           Row() {
             Text('主题设置')
-            // 使用FontUtils：标题（比正文大2）
               .fontSize(FontUtils.getTitleSize(this.fontSize))
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
@@ -55,7 +52,6 @@ export struct Settings {
 
           // 主题说明
           Text('跟随系统主题自动切换')
-          // 使用FontUtils：正文字体
             .fontSize(FontUtils.getBodySize(this.fontSize))
             .fontColor($r('app.color.text_tertiary'))
             .padding({ left: 16, right: 16, bottom: 16 })
@@ -69,7 +65,6 @@ export struct Settings {
         Column() {
           Row() {
             Text('字体大小')
-            // 使用FontUtils：标题（比正文大2）
               .fontSize(FontUtils.getTitleSize(this.fontSize))
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
@@ -80,11 +75,9 @@ export struct Settings {
           // 当前字体大小显示
           Row() {
             Text('当前：')
-            // 使用FontUtils：正文字体
               .fontSize(FontUtils.getBodySize(this.fontSize))
               .fontColor($r('app.color.text_secondary'))
             Text(`${this.fontSize}px (${this.getFontSizeName(this.fontSize)})`)
-            // 使用FontUtils：正文字体
               .fontSize(FontUtils.getBodySize(this.fontSize))
               .fontColor($r('app.color.text_primary'))
               .fontWeight(FontWeight.Medium)

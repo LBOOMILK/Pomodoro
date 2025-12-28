@@ -147,7 +147,6 @@ export struct TodoItem {
       offsetX: 0,
       offsetY: 2
     })
-    .focusable(false)  // 禁用整个列表项的焦点
   }
 }
 
