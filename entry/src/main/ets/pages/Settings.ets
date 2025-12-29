@@ -183,9 +183,7 @@ export struct Settings {
     .height('100%')
     .backgroundColor($r('app.color.background_secondary'))
   }
-
   //=================== 私有方法 ===================
-
   /**
    * 获取字体大小对应的名称
    */

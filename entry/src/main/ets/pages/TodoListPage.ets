@@ -55,7 +55,7 @@ class TodoData {
 //=================== 待办项组件模块 ===================
 @Component
 export struct TodoItem {
-  // 改回 @Prop，使用本地状态管理
+  //使用本地状态管理
   @Prop todoItem: TodoItemType;  // 待办事项数据
   @State localIsCompleted: boolean = false;  // 添加本地状态
   // 导入字体工具

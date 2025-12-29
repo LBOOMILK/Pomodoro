@@ -1,4 +1,4 @@
-// pages/Index.ets
+//Index.ets
 import { TomatoClock } from './TomatoClock';
 import { TodoListPage } from './TodoListPage';
 import { Settings } from './Settings';
@@ -59,8 +59,8 @@ struct Index {
       Text(text)
         .fontSize(FontUtils.getSmallSize(this.fontSize))
         .fontColor(this.currentIndex === index ?
-          $r('app.color.primary_red') :   // 选中状态用蓝色
-          $r('app.color.primary_green') // 未选中状态用灰色
+          $r('app.color.primary_red') :   // 选中状态用红色
+          $r('app.color.primary_green') // 未选中状态用绿色
         )
     }
     .justifyContent(FlexAlign.Center)

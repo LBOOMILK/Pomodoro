@@ -1,4 +1,4 @@
-// pages/TomatoClock.ets
+//TomatoClock.ets
 import { FontUtils } from '../until/FontUtils';
 @Component
 export struct TomatoClock {
