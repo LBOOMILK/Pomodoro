@@ -1,6 +1,6 @@
 //Settings.ets
 //=================== 导入模块 ===================
-import { FontUtils } from '../until/FontUtils';
+import { FontUtils } from '../utils/FontUtils';
 
 @Component
 export struct Settings {

@@ -2,7 +2,7 @@
 import { TomatoClock } from './TomatoClock';
 import { TodoListPage } from './TodoListPage';
 import { Settings } from './Settings';
-import { FontUtils } from '../until/FontUtils';
+import { FontUtils } from '../utils/FontUtils';
 
 @Entry
 @Component

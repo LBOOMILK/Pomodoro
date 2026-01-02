@@ -1,7 +1,7 @@
 // TodoPage.ets
 //=================== 导入模块 ===================
 import prompt from '@ohos.prompt';
-import { FontUtils } from '../until/FontUtils';
+import { FontUtils } from '../utils/FontUtils';
 //=================== 类型定义模块 ===================
 // 弹窗响应类型
 interface DialogResponse {
