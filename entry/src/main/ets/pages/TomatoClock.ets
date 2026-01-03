@@ -10,164 +10,180 @@ export struct TomatoClock {
   @State timeRemaining: number = 25 * 60;  // 默认25分钟
   @State isRunning: boolean = false;
   @State isWorkMode: boolean = true;      // true=工作时间, false=休息时间
-  @State completedPomodoros: number = 0;  // 完成的番茄数
+  @StorageLink('completedPomodoros') completedPomodoros: number = 0;  // 完成的番茄数，持久化保存
   @State timerId: number = 0;
+  @State speedMultiplier: number = 1;     // 时间流速倍数，1=正常，2=2倍速，5=5倍速
 
   // 配置
-  private readonly workDuration: number = 25 * 60;  // 25分钟
-  private readonly breakDuration: number = 5 * 60;  // 5分钟
+  @StorageLink('workDuration') workDuration: number = 25 * 60;  // 25分钟，持久化保存
+  @StorageLink('breakDuration') breakDuration: number = 5 * 60;  // 5分钟，持久化保存
   private readonly longBreakDuration: number = 15 * 60; // 15分钟
   private readonly pomodorosBeforeLongBreak: number = 4;
 
-  // 计算进度百分比
+  // 计算进度百分比（随着时间增加而增加，表示已完成的时间比例）
   get progressPercentage(): number {
     const totalTime = this.isWorkMode ? this.workDuration : this.breakDuration;
     return ((totalTime - this.timeRemaining) / totalTime) * 100;
   }
 
   build() {
-    Column({ space: 20 }) {
-      //=================== 页面标题 ===================
-      Text(this.isWorkMode ? '🍅 工作时间' : '☕ 休息时间')
-        .fontSize(FontUtils.getTitleSize(this.fontSize))
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.text_primary'))
-        .margin({ top: 30 })
+    Scroll() {
+      Column({ space: 20 }) {
+        //=================== 页面标题 ===================
+        Text(this.isWorkMode ? '🍅 工作时间' : '☕ 休息时间')
+          .fontSize(FontUtils.getTitleSize(this.fontSize))
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
+          .margin({ top: 30 })
 
-      //=================== 完成番茄数统计 ===================
-      Row() {
-        Text('已完成：')
-          .fontSize(FontUtils.getBodySize(this.fontSize))
-          .fontColor($r('app.color.text_secondary'))
-        Text(`${this.completedPomodoros} 个番茄`)
-          .fontSize(FontUtils.getBodySize(this.fontSize))
-          .fontColor($r('app.color.primary_blue'))
-          .fontWeight(FontWeight.Medium)
-      }
-      .margin({ bottom: 10 })
-
-      //=================== 时钟显示区域 ===================
-      Column() {
-        // 进度环
-        Stack() {
-          // 背景环
-          Circle()
-            .width(200)
-            .height(200)
-            .fill('transparent')
-            .stroke($r('app.color.background_tertiary'))
-            .strokeWidth(10)
-
-          // 进度环
-          Circle()
-            .width(200)
-            .height(200)
-            .fill('transparent')
-            .stroke(this.isWorkMode ? $r('app.color.primary_red') : $r('app.color.primary_green'))
-            .strokeWidth(10)
-            .strokeDashArray([this.progressPercentage * 6.28, 6.28]) // 2πr ≈ 6.28
-
-          // 时间显示
-          Column() {
-            Text(Math.floor(this.timeRemaining / 60).toString().padStart(2, '0'))
-              .fontSize(48)
-              .fontColor($r('app.color.text_primary'))
-              .fontWeight(FontWeight.Bold)
-            Text(':')
-              .fontSize(48)
-              .fontColor($r('app.color.text_primary'))
-              .margin({ top: -20, bottom: -20 })
-            Text((this.timeRemaining % 60).toString().padStart(2, '0'))
-              .fontSize(48)
-              .fontColor($r('app.color.text_primary'))
-              .fontWeight(FontWeight.Bold)
-          }
+        //=================== 完成番茄数统计 ===================
+        Row() {
+          Text('已完成：')
+            .fontSize(FontUtils.getBodySize(this.fontSize))
+            .fontColor($r('app.color.text_secondary'))
+          Text(`${this.completedPomodoros} 个番茄`)
+            .fontSize(FontUtils.getBodySize(this.fontSize))
+            .fontColor($r('app.color.primary_blue'))
+            .fontWeight(FontWeight.Medium)
         }
+        .margin({ bottom: 10 })
 
-        // 模式说明
-        Text(this.isWorkMode ? '专注工作，避免分心' : '放松休息，准备下一轮')
-          .fontSize(FontUtils.getSmallSize(this.fontSize))
-          .fontColor($r('app.color.text_tertiary'))
-          .margin({ top: 20 })
-      }
-      .margin({ bottom: 30 })
+        //=================== 时钟显示区域 ===================
+        Column() {
+          // 进度环
+          Stack() {
+            // 背景环
+            Circle()
+              .width(250)
+              .height(250)
+              .fill('transparent')
+              .stroke($r('app.color.background_tertiary'))
+              .strokeWidth(15)
 
-      //=================== 控制按钮区域 ===================
-      Column({ space: 15 }) {
-        // 开始/暂停按钮
-        Button(this.isRunning ? '⏸️ 暂停' : '▶️ 开始')
-          .width(200)
-          .height(50)
-          .backgroundColor(this.isRunning ?
-            $r('app.color.warning') :
-            $r('app.color.primary_green'))
-          .fontColor($r('app.color.White'))
-          .fontSize(FontUtils.getSmallSize(this.fontSize))
-          .borderRadius(25)
-          .onClick(() => {
-            this.toggleTimer();
-          })
+            // 进度环
+            Circle()
+              .width(250)
+              .height(250)
+              .fill('transparent')
+              .stroke(this.isWorkMode ? $r('app.color.primary_red') : $r('app.color.primary_green'))
+              .strokeWidth(15)
+              .strokeDashArray([this.progressPercentage * 6.28, 6.28]) // 2πr ≈ 6.28
 
-        // 重置按钮
-        Button('🔄 重置')
-          .width(200)
-          .height(50)
-          .backgroundColor($r('app.color.button_disabled'))
-          .fontColor($r('app.color.text_secondary'))
-          .fontSize(FontUtils.getSmallSize(this.fontSize))
-          .borderRadius(25)
-          .onClick(() => {
-            this.resetTimer();
-          })
+            // 时间显示
+            Row() {
+              Text(Math.floor(this.timeRemaining / 60).toString().padStart(2, '0'))
+                .fontSize(60)
+                .fontColor($r('app.color.text_primary'))
+                .fontWeight(FontWeight.Bold)
+              Text(':')
+                .fontSize(60)
+                .fontColor($r('app.color.text_primary'))
+                .fontWeight(FontWeight.Bold)
+                .margin({ left: 5, right: 5 })
+              Text((this.timeRemaining % 60).toString().padStart(2, '0'))
+                .fontSize(60)
+                .fontColor($r('app.color.text_primary'))
+                .fontWeight(FontWeight.Bold)
+            }
+          }
 
-        // 切换模式按钮（仅当未运行时显示）
-        if (!this.isRunning) {
-          Button(this.isWorkMode ? '切换到休息' : '切换到工作')
+          // 模式说明
+          Text(this.isWorkMode ? '专注工作，避免分心' : '放松休息，准备下一轮')
+            .fontSize(FontUtils.getSmallSize(this.fontSize))
+            .fontColor($r('app.color.text_tertiary'))
+            .margin({ top: 20 })
+        }
+        .margin({ bottom: 30 })
+
+        //=================== 控制按钮区域 ===================
+        Column({ space: 15 }) {
+          // 开始/暂停按钮
+          Button(this.isRunning ? '⏸️ 暂停' : '▶️ 开始')
             .width(200)
             .height(50)
-            .backgroundColor($r('app.color.primary_blue'))
+            .backgroundColor(this.isRunning ?
+              $r('app.color.warning') :
+              $r('app.color.primary_green'))
             .fontColor($r('app.color.White'))
             .fontSize(FontUtils.getSmallSize(this.fontSize))
             .borderRadius(25)
             .onClick(() => {
-              this.switchMode();
+              this.toggleTimer();
             })
-            .margin({ top: 10 })
-        }
-      }
 
-      //=================== 设置区域 ===================
-      Column({ space: 10 }) {
-        Text('时间设置')
-          .fontSize(FontUtils.getSmallSize(this.fontSize))
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 30, bottom: 10 })
+          // 重置按钮
+          Button('🔄 重置')
+            .width(200)
+            .height(50)
+            .backgroundColor($r('app.color.button_disabled'))
+            .fontColor($r('app.color.text_secondary'))
+            .fontSize(FontUtils.getSmallSize(this.fontSize))
+            .borderRadius(25)
+            .onClick(() => {
+              this.resetTimer();
+            })
 
-        Row({ space: 20 }) {
-          Column() {
-            Text('工作时间')
+          // 切换模式按钮（仅当未运行时显示）
+          if (!this.isRunning) {
+            Button(this.isWorkMode ? '切换到休息' : '切换到工作')
+              .width(200)
+              .height(50)
+              .backgroundColor($r('app.color.primary_blue'))
+              .fontColor($r('app.color.White'))
               .fontSize(FontUtils.getSmallSize(this.fontSize))
-              .fontColor($r('app.color.text_tertiary'))
-            Text('25分钟')
-              .fontSize(FontUtils.getBodySize(this.fontSize))
-              .fontColor($r('app.color.text_primary'))
+              .borderRadius(25)
+              .onClick(() => {
+                this.switchMode();
+              })
+              .margin({ top: 10 })
           }
 
-          Column() {
-            Text('休息时间')
-              .fontSize(FontUtils.getSmallSize(this.fontSize))
-              .fontColor($r('app.color.text_tertiary'))
-            Text('5分钟')
-              .fontSize(FontUtils.getBodySize(this.fontSize))
-              .fontColor($r('app.color.text_primary'))
+          // 速度控制按钮
+          Row({ space: 10 }) {
+            Button('正常速度')
+              .width(95)
+              .height(40)
+              .backgroundColor(this.speedMultiplier === 1 ? $r('app.color.primary_green') : $r('app.color.button_disabled'))
+              .fontColor(this.speedMultiplier === 1 ? $r('app.color.White') : $r('app.color.text_secondary'))
+              .fontSize(FontUtils.getSmallSize(this.fontSize) - 2)
+              .borderRadius(20)
+              .onClick(() => {
+                this.speedMultiplier = 1;
+              })
+
+            Button('30倍速')
+              .width(95)
+              .height(40)
+              .backgroundColor(this.speedMultiplier === 30 ? $r('app.color.primary_green') : $r('app.color.button_disabled'))
+              .fontColor(this.speedMultiplier === 30 ? $r('app.color.White') : $r('app.color.text_secondary'))
+              .fontSize(FontUtils.getSmallSize(this.fontSize) - 2)
+              .borderRadius(20)
+              .onClick(() => {
+                this.speedMultiplier = 30;
+              })
+
+            Button('60倍速')
+              .width(95)
+              .height(40)
+              .backgroundColor(this.speedMultiplier === 60 ? $r('app.color.primary_green') : $r('app.color.button_disabled'))
+              .fontColor(this.speedMultiplier === 60 ? $r('app.color.White') : $r('app.color.text_secondary'))
+              .fontSize(FontUtils.getSmallSize(this.fontSize) - 2)
+              .borderRadius(20)
+              .onClick(() => {
+                this.speedMultiplier = 60;
+              })
           }
+          .margin({ top: 20 })
         }
+        .margin({ bottom: 30 }) // 添加底部边距，确保内容完全可见
       }
+      .width('100%')
+      .padding(20)
+      .backgroundColor($r('app.color.background_secondary'))
     }
     .width('100%')
     .height('100%')
-    .padding(20)
-    .backgroundColor($r('app.color.background_secondary'))
+    .edgeEffect(EdgeEffect.Spring)  // 弹性滚动
   }
 
   //=================== 计时器控制方法 ===================
@@ -178,41 +194,57 @@ export struct TomatoClock {
     } else {
       this.startTimer();
     }
-    this.isRunning = !this.isRunning;
   }
 
   // 开始计时
   startTimer() {
-    this.stopTimer(); // 确保只有一个计时器
-
-    this.timerId = setInterval(() => {
-      if (this.timeRemaining > 0) {
-        this.timeRemaining -= 1;
-      } else {
-        this.handleTimerComplete();
+    // 彻底清理所有可能存在的计时器
+    this.stopTimer();
+    
+    this.isRunning = true;
+    
+    // 重新设计计时器逻辑，使用更可靠的实现
+    const runTimer = () => {
+      if (!this.isRunning) {
+        return;
       }
-    }, 1000) as number;
+      
+      // 根据速度倍数更新时间
+      this.timeRemaining = Math.max(0, this.timeRemaining - this.speedMultiplier);
+      
+      if (this.timeRemaining <= 0) {
+        this.handleTimerComplete();
+        return;
+      }
+      
+      // 使用setTimeout替代setInterval，避免累积误差和多实例问题
+      this.timerId = setTimeout(runTimer, 1000) as number;
+    };
+    
+    // 立即执行一次
+    runTimer();
   }
 
   // 停止计时
   stopTimer() {
+    // 清除所有可能存在的计时器
     if (this.timerId) {
-      clearInterval(this.timerId);
-      this.timerId = 0;
+      clearTimeout(this.timerId);
+      clearTimeout(this.timerId); // 双重保险
     }
+    this.timerId = 0;
+    this.isRunning = false;
   }
 
   // 重置计时器
   resetTimer() {
     this.stopTimer();
-    this.isRunning = false;
     this.timeRemaining = this.isWorkMode ? this.workDuration : this.breakDuration;
   }
 
   // 切换工作/休息模式
   switchMode() {
     this.stopTimer();
-    this.isRunning = false;
     this.isWorkMode = !this.isWorkMode;
     this.timeRemaining = this.isWorkMode ? this.workDuration : this.breakDuration;
   }
@@ -220,7 +252,6 @@ export struct TomatoClock {
   // 处理计时完成
   private handleTimerComplete() {
     this.stopTimer();
-    this.isRunning = false;
 
     if (this.isWorkMode) {
       // 工作模式完成
