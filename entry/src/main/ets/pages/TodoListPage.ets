@@ -160,6 +160,7 @@ struct TodoListPage {
   @State showDuplicateWarning: boolean = false;             // 重复项提示控制
   @State totalTasks: TodoItemType[] = [];                   // 所有待办任务
   @State newTaskText: string = '';                          // 新任务输入框内容
+  @State filterType: string = 'all';  // 筛选类型：all-所有, completed-已完成, active-未完成
 
   //=================== 生命周期 ===================
   aboutToAppear() {
@@ -306,14 +307,52 @@ struct TodoListPage {
             this.addTask();  // 触发添加任务
           })
       }
-      .padding({ left: 20, right: 20, bottom: 20 })
+      .padding({ left: 20, right: 20, bottom: 10 })
+
+      //=================== 筛选按钮组 ===================
+      Row({ space: 8 }) {
+        Button('所有')
+          .width('30%')
+          .height(32)
+          .backgroundColor(this.filterType === 'all' ? $r('app.color.primary_blue') : $r('app.color.button_disabled'))
+          .fontColor(this.filterType === 'all' ? $r('app.color.White') : $r('app.color.text_secondary'))
+          .fontSize(FontUtils.getSmallSize(this.fontSize) - 2)
+          .borderRadius(16)
+          .onClick(() => {
+            this.filterType = 'all';
+          })
+
+        Button('已完成')
+          .width('30%')
+          .height(32)
+          .backgroundColor(this.filterType === 'completed' ? $r('app.color.primary_blue') : $r('app.color.button_disabled'))
+          .fontColor(this.filterType === 'completed' ? $r('app.color.White') : $r('app.color.text_secondary'))
+          .fontSize(FontUtils.getSmallSize(this.fontSize) - 2)
+          .borderRadius(16)
+          .onClick(() => {
+            this.filterType = 'completed';
+          })
+
+        Button('未完成')
+          .width('30%')
+          .height(32)
+          .backgroundColor(this.filterType === 'active' ? $r('app.color.primary_blue') : $r('app.color.button_disabled'))
+          .fontColor(this.filterType === 'active' ? $r('app.color.White') : $r('app.color.text_secondary'))
+          .fontSize(FontUtils.getSmallSize(this.fontSize) - 2)
+          .borderRadius(16)
+          .onClick(() => {
+            this.filterType = 'active';
+          })
+      }
+      .padding({ left: 20, right: 20, bottom: 10 })
 
       //=================== 待办事项列表区域 ===================
       Scroll() {
         // 判断是否有任务，没有则显示空状态提示
         if (this.totalTasks.length === 0) {
           Column() {
-            Text('暂无待办事项，点击"添加"创建第一个任务吧～')
+            Text(this.filterType === 'all' ? '暂无待办事项，点击"添加"创建第一个任务吧～' :
+              this.filterType === 'completed' ? '暂无已完成的待办事项' : '暂无未完成的待办事项')
               .fontSize(14)
               .fontColor($r('app.color.text_tertiary'))
               .margin({ top: 40 })
@@ -325,40 +364,47 @@ struct TodoListPage {
         } else {
           Column({ space: 12 }) {
             ForEach(this.totalTasks, (item: TodoItemType) => {
-              TodoItem({
-                todoItem: item,
-                fontSize: this.fontSize,  // 传递字体大小给子组件
-                //=================== 删除按钮回调 ===================
-                onDelete: () => {
-                  const taskIdToDelete: number = item.id;
-                  // 显示确认弹窗
-                  prompt.showDialog({
-                    title: '删除确认',
-                    message: '确定要删除该待办事项吗？\n',
-                    buttons: [
-                      { text: '取消', color: '#007AFF' },
-                      { text: '确定', color: '#FF3B30' }
-                    ]
-                  })
-                    .then((data: DialogResponse) => {
-                      if (data.index === 1) {  // 确定按钮
-                        // 直接删除
-                        this.totalTasks = this.totalTasks.filter(task => task.id !== taskIdToDelete);
-                      }
+              // 根据filterType过滤任务
+              if (
+                (this.filterType === 'all') ||
+                  (this.filterType === 'completed' && item.isCompleted) ||
+                  (this.filterType === 'active' && !item.isCompleted)
+              ) {
+                TodoItem({
+                  todoItem: item,
+                  fontSize: this.fontSize,  // 传递字体大小给子组件
+                  //=================== 删除按钮回调 ===================
+                  onDelete: () => {
+                    const taskIdToDelete: number = item.id;
+                    // 显示确认弹窗
+                    prompt.showDialog({
+                      title: '删除确认',
+                      message: '确定要删除该待办事项吗？\n',
+                      buttons: [
+                        { text: '取消', color: '#007AFF' },
+                        { text: '确定', color: '#FF3B30' }
+                      ]
                     })
-                    .catch((error: Error) => {
-                      console.error('弹窗显示失败:', error);
-                    });
-                },
-                //=================== 切换完成状态回调 ===================
-                onToggle: () => {
-                  this.toggleTaskStatus(item.id);
-                },
-                //=================== 更新文本回调 ===================
-                onTextChange: (content: string) => {
-                  this.updateTaskText(item.id, content);
-                }
-              })
+                      .then((data: DialogResponse) => {
+                        if (data.index === 1) {  // 确定按钮
+                          // 直接删除
+                          this.totalTasks = this.totalTasks.filter(task => task.id !== taskIdToDelete);
+                        }
+                      })
+                      .catch((error: Error) => {
+                        console.error('弹窗显示失败:', error);
+                      });
+                  },
+                  //=================== 切换完成状态回调 ===================
+                  onToggle: () => {
+                    this.toggleTaskStatus(item.id);
+                  },
+                  //=================== 更新文本回调 ===================
+                  onTextChange: (content: string) => {
+                    this.updateTaskText(item.id, content);
+                  }
+                })
+              }
             }, (item: TodoItemType) => item.id.toString())
           }
           .width('100%')
