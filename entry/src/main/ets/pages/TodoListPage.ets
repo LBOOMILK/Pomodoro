@@ -56,8 +56,9 @@ class TodoData {
 @Component
 export struct TodoItem {
   //使用本地状态管理
-  @Prop todoItem: TodoItemType;  // 待办事项数据
-  @State localIsCompleted: boolean = false;  // 添加本地状态
+  @Prop todoItem: TodoItemType = { id: 0, content: '', isCompleted: false };  // 待办事项数据，添加默认值避免undefined
+  // 恢复localIsCompleted本地状态，用于立即更新UI
+  @State localIsCompleted: boolean = false;
   // 导入字体工具
   // 注意：组件内不能直接使用StorageLink，需要通过父组件传递
   @Prop fontSize: number = 16;  // 从父组件传递过来
@@ -72,7 +73,7 @@ export struct TodoItem {
     this.localIsCompleted = this.todoItem.isCompleted;
   }
 
-  // 更新时同步
+  // 更新时同步父组件数据到本地状态
   aboutToUpdate() {
     this.localIsCompleted = this.todoItem.isCompleted;
   }
@@ -101,8 +102,10 @@ export struct TodoItem {
         .height(24)
       }
       .onClick(() => {
-        this.localIsCompleted = !this.localIsCompleted;  // 更新本地状态
-        this.onToggle?.(); // 调用父组件回调
+        // 先更新本地状态，立即显示UI变化
+        this.localIsCompleted = !this.localIsCompleted;
+        // 然后调用父组件回调，更新全局状态
+        this.onToggle?.();
       })
 
       //=================== 中间文本编辑区域 ===================
@@ -111,7 +114,7 @@ export struct TodoItem {
         .height(32)
         .fontSize(FontUtils.getBodySize(this.fontSize))  // 使用正文字体
         .fontColor($r('app.color.text_primary'))
-        // 使用本地状态
+        // 使用本地状态，立即显示UI变化
         .opacity(this.localIsCompleted ? 0.4 : 1)
         .decoration({
           type: this.localIsCompleted ? TextDecorationType.LineThrough : TextDecorationType.None
@@ -159,12 +162,38 @@ struct TodoListPage {
   @State showInformation: boolean = false;                  // 输入成功提示控制
   @State showDuplicateWarning: boolean = false;             // 重复项提示控制
   @State totalTasks: TodoItemType[] = [];                   // 所有待办任务
+  @State filteredTasks: TodoItemType[] = [];                // 过滤后的任务列表
   @State newTaskText: string = '';                          // 新任务输入框内容
   @State filterType: string = 'all';  // 筛选类型：all-所有, completed-已完成, active-未完成
 
   //=================== 生命周期 ===================
   aboutToAppear() {
     this.totalTasks = TodoData.getData();
+    // 初始化过滤后的任务列表
+    this.updateFilteredTasks();
+  }
+
+  //=================== 业务逻辑方法 ===================
+  // 更新过滤后的任务列表 - 用于同步totalTasks和filteredTasks
+  updateFilteredTasks() {
+    // 确保totalTasks是数组
+    if (!Array.isArray(this.totalTasks)) {
+      this.filteredTasks = [];
+      return;
+    }
+    
+    // 根据filterType过滤任务
+    switch (this.filterType) {
+      case 'completed':
+        this.filteredTasks = this.totalTasks.filter(task => task.isCompleted);
+        break;
+      case 'active':
+        this.filteredTasks = this.totalTasks.filter(task => !task.isCompleted);
+        break;
+      default:
+        this.filteredTasks = [...this.totalTasks];
+        break;
+    }
   }
 
   //=================== 业务逻辑方法 ===================
@@ -203,8 +232,12 @@ struct TodoListPage {
       isCompleted: false
     };
 
-    this.totalTasks.push(newTask);
+    // 将push()改为创建新数组，确保触发响应式更新
+    this.totalTasks = [...this.totalTasks, newTask];
     this.newTaskText = '';  //立即清空输入框
+
+    // 更新过滤后的任务列表
+    this.updateFilteredTasks();
 
     // 显示成功提示
     this.showEmptyWarning = false;
@@ -221,6 +254,9 @@ struct TodoListPage {
       }
       return item;
     });
+    
+    // 更新过滤后的任务列表
+    this.updateFilteredTasks();
   }
 
   // 更新任务文本
@@ -231,6 +267,9 @@ struct TodoListPage {
       }
       return item;
     });
+    
+    // 更新过滤后的任务列表
+    this.updateFilteredTasks();
   }
 
   //=================== 页面构建 ===================
@@ -320,6 +359,8 @@ struct TodoListPage {
           .borderRadius(16)
           .onClick(() => {
             this.filterType = 'all';
+            // 更新过滤后的任务列表
+            this.updateFilteredTasks();
           })
 
         Button('已完成')
@@ -331,6 +372,8 @@ struct TodoListPage {
           .borderRadius(16)
           .onClick(() => {
             this.filterType = 'completed';
+            // 更新过滤后的任务列表
+            this.updateFilteredTasks();
           })
 
         Button('未完成')
@@ -342,14 +385,17 @@ struct TodoListPage {
           .borderRadius(16)
           .onClick(() => {
             this.filterType = 'active';
+            // 更新过滤后的任务列表
+            this.updateFilteredTasks();
           })
       }
       .padding({ left: 20, right: 20, bottom: 10 })
 
       //=================== 待办事项列表区域 ===================
       Scroll() {
-        // 判断是否有任务，没有则显示空状态提示
-        if (this.totalTasks.length === 0) {
+        // 使用filteredTasks计算属性获取过滤后的任务列表
+        // 判断过滤后的任务列表是否为空，没有则显示空状态提示
+        if (this.filteredTasks.length === 0) {
           Column() {
             Text(this.filterType === 'all' ? '暂无待办事项，点击"添加"创建第一个任务吧～' :
               this.filterType === 'completed' ? '暂无已完成的待办事项' : '暂无未完成的待办事项')
@@ -363,48 +409,44 @@ struct TodoListPage {
           .height('100%')
         } else {
           Column({ space: 12 }) {
-            ForEach(this.totalTasks, (item: TodoItemType) => {
-              // 根据filterType过滤任务
-              if (
-                (this.filterType === 'all') ||
-                  (this.filterType === 'completed' && item.isCompleted) ||
-                  (this.filterType === 'active' && !item.isCompleted)
-              ) {
-                TodoItem({
-                  todoItem: item,
-                  fontSize: this.fontSize,  // 传递字体大小给子组件
-                  //=================== 删除按钮回调 ===================
-                  onDelete: () => {
-                    const taskIdToDelete: number = item.id;
-                    // 显示确认弹窗
-                    prompt.showDialog({
-                      title: '删除确认',
-                      message: '确定要删除该待办事项吗？\n',
-                      buttons: [
-                        { text: '取消', color: '#007AFF' },
-                        { text: '确定', color: '#FF3B30' }
-                      ]
+            // 直接遍历过滤后的任务列表，避免条件判断中的渲染问题
+            ForEach(this.filteredTasks, (item: TodoItemType) => {
+              TodoItem({
+                todoItem: item,
+                fontSize: this.fontSize,  // 传递字体大小给子组件
+                //=================== 删除按钮回调 ===================
+                onDelete: () => {
+                  const taskIdToDelete: number = item.id;
+                  // 显示确认弹窗
+                  prompt.showDialog({
+                    title: '删除确认',
+                    message: '确定要删除该待办事项吗？\n',
+                    buttons: [
+                      { text: '取消', color: '#007AFF' },
+                      { text: '确定', color: '#FF3B30' }
+                    ]
+                  })
+                    .then((data: DialogResponse) => {
+                      if (data.index === 1) {  // 确定按钮
+                        // 创建新数组更新totalTasks，确保响应式更新
+                        this.totalTasks = this.totalTasks.filter(task => task.id !== taskIdToDelete);
+                        // 更新过滤后的任务列表
+                        this.updateFilteredTasks();
+                      }
                     })
-                      .then((data: DialogResponse) => {
-                        if (data.index === 1) {  // 确定按钮
-                          // 直接删除
-                          this.totalTasks = this.totalTasks.filter(task => task.id !== taskIdToDelete);
-                        }
-                      })
-                      .catch((error: Error) => {
-                        console.error('弹窗显示失败:', error);
-                      });
-                  },
-                  //=================== 切换完成状态回调 ===================
-                  onToggle: () => {
-                    this.toggleTaskStatus(item.id);
-                  },
-                  //=================== 更新文本回调 ===================
-                  onTextChange: (content: string) => {
-                    this.updateTaskText(item.id, content);
-                  }
-                })
-              }
+                    .catch((error: Error) => {
+                      console.error('弹窗显示失败:', error);
+                    });
+                },
+                //=================== 切换完成状态回调 ===================
+                onToggle: () => {
+                  this.toggleTaskStatus(item.id);
+                },
+                //=================== 更新文本回调 ===================
+                onTextChange: (content: string) => {
+                  this.updateTaskText(item.id, content);
+                }
+              })
             }, (item: TodoItemType) => item.id.toString())
           }
           .width('100%')
